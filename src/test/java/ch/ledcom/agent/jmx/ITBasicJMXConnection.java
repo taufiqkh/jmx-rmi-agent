@@ -23,7 +23,9 @@ import javax.management.MBeanServerConnection;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
+import javax.naming.ServiceUnavailableException;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,7 +52,7 @@ public class ITBasicJMXConnection extends AbstractJMXConnectionTest {
                 "-D" + JmxCustomAgent.PASSWORD_FILE + "=target/test-classes/jmxremote.password",
                 "-D" + JmxCustomAgent.ACCESS_FILE + "=target/test-classes/jmxremote.access");
 
-        checkAndReturnConnection(9998, "testUser", "1234");
+        checkAndReturnConnection(HOST, 9998, "testUser", "1234");
     }
 
     @Test(expected = SecurityException.class)
@@ -62,13 +64,37 @@ public class ITBasicJMXConnection extends AbstractJMXConnectionTest {
         checkAndReturnConnection(9999);
     }
 
-    private MBeanServerConnection checkAndReturnConnection(final int port) throws IOException {
-        return checkAndReturnConnection(port, (String) null, (String) null);
+    @Test
+    public void testForceLocalhost() throws InterruptedException,
+            IOException {
+        startDummyApplication("-D" + JmxCustomAgent.FORCE_LOCALHOST_KEY + "=true",
+                "-D" + JmxCustomAgent.PORT_KEY + "=10000");
+        InetAddress localHost = InetAddress.getLocalHost();
+        InetAddress[] addresses = InetAddress.getAllByName(localHost.getCanonicalHostName());
+        for (InetAddress address : addresses) {
+            if (address.isLoopbackAddress()) {
+                continue;
+            }
+            MBeanServerConnection connection = null;
+            try {
+                connection = checkAndReturnConnection(address.getHostAddress
+                        (), 10000, null, null);
+            } catch (IOException e) {
+                Assert.assertTrue("Service should not be available on an external IP",
+                        e.getCause() instanceof ServiceUnavailableException);
+            }
+            Assert.assertNull("An external IP should not result in a valid connection", connection);
+        }
     }
 
-    private MBeanServerConnection checkAndReturnConnection(final int port, final String username,
+    private MBeanServerConnection checkAndReturnConnection(final int port) throws IOException {
+        return checkAndReturnConnection(HOST, port, (String) null, (String) null);
+    }
+
+    private MBeanServerConnection checkAndReturnConnection(final String host, final int port,
+                                                           final String username,
                                                            final String password) throws IOException {
-        String urlString = "service:jmx:rmi://" + HOST + ":" + port + "/jndi/rmi://" + HOST + ":" + port + "/jmxrmi";
+        String urlString = buildUrlString(host, port);
         System.out.println("Checking url [" + urlString + "]");
         JMXServiceURL url = new JMXServiceURL(
                 urlString);
@@ -83,6 +109,11 @@ public class ITBasicJMXConnection extends AbstractJMXConnectionTest {
         MBeanServerConnection mbsc = jmxc.getMBeanServerConnection();
         Assert.assertNotNull(mbsc);
         return mbsc;
+    }
+
+    private String buildUrlString(String host, int port) {
+        return "service:jmx:rmi://" + host + ":" + port + "/jndi/rmi://" + host + ":" +
+                port + "/jmxrmi";
     }
 
 }
