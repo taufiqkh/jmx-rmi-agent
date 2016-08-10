@@ -1,3 +1,23 @@
+/**
+ * Copyright (C) 2011 Torsten Curdt
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Modified by Taufiq Hoven, from the following:
+ *  https://github.com/tcurdt/jmx2snmp/blob/master/src/main/java/org/vafer/
+ *      jmx2snmp/jmx/RMIServerSocketFactoryImpl.java
+ *  http://vafer.org/blog/20061010091658/
+ */
 package ch.ledcom.agent.jmx;
 
 import javax.net.ServerSocketFactory;
@@ -9,8 +29,6 @@ import java.rmi.server.RMIServerSocketFactory;
 /**
  * Custom implementation that only creates server sockets on the specified
  * address.
- *
- * From http://vafer.org/blog/20061010091658/
  */
 public final class RMIServerSocketFactoryImpl
         implements RMIServerSocketFactory {
